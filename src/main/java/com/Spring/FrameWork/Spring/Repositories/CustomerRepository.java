@@ -9,5 +9,10 @@ import java.util.List;
 public interface CustomerRepository extends CrudRepository<Customer, Long> {
 
     @Query(value = "Select * From \"Customer\" ", nativeQuery = true)
-    List<Customer> findByName(String name);
+    List<Customer> findAllCustomers(String name);
+
+    @Query(value = "Select * From Customer where mobileNumber=?1 LIMIT 1", nativeQuery = true)
+    Customer findByMobileNumber(String mobileNumber);
+
+
 }
