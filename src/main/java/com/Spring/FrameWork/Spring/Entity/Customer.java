@@ -13,18 +13,18 @@ import java.io.Serializable;
 @Setter
 @Entity
 @EnableAutoConfiguration
-@Table(name = "Customer",schema = "SYS")
+@Table(name = "Customer", schema = "SYS")
 public class Customer implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
-    @Column(name="fName")
+    @Column(name = "fName")
     private String fName;
-    @Column(name="lName")
+    @Column(name = "lName")
     private String lName;
-    @Column(name="mobileNumber")
+    @Column(name = "mobileNumber")
     private String mobileNumber;
 
     public Customer() {
@@ -36,5 +36,11 @@ public class Customer implements Serializable {
         this.lName = customer.lName;
         this.mobileNumber = customer.mobileNumber;
 
+    }
+
+    @Override
+    public String toString() {
+        return "Customer id ->" + this.id + " " +
+                "Customer Name ->" + this.fName;
     }
 }

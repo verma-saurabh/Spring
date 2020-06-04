@@ -28,9 +28,9 @@ public class Application implements CommandLineRunner {
     public void run(String... args) throws Exception {
         String[] beans = appContext.getBeanDefinitionNames();
         for (String bean : beans) {
-            System.out.println("Bean name: " + bean);
+            //System.out.println("Bean name: " + bean);
             Object object = appContext.getBean(bean);
-            System.out.println("Bean object:" + object);
+            //System.out.println("Bean object:" + object);
         }
     }
 }

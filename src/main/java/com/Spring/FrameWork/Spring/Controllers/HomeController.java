@@ -4,6 +4,8 @@ import com.Spring.FrameWork.Spring.Entity.Customer;
 import com.Spring.FrameWork.Spring.Repositories.CustomerRepository;
 import com.Spring.FrameWork.Spring.error.CustomerAlreadyPresentException;
 import com.Spring.FrameWork.Spring.error.CustomerNotFoundException;
+import com.Spring.FrameWork.Spring.service.CustomerService;
+import com.Spring.FrameWork.Spring.service.serviceImpl.CustomerServiceImpl;
 import org.apache.coyote.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +16,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
+import java.io.FileReader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/")
@@ -25,6 +36,8 @@ public class HomeController {
     @Autowired
     CustomerRepository customerRepository;
 
+    @Autowired
+    CustomerServiceImpl customerService;
 
     @GetMapping(value = "/hello")
     public String hello() {
@@ -83,23 +96,63 @@ public class HomeController {
         }
     }
 
-    public int findJudge(int N, int[][] trust) {
+    @PostMapping(value = "/getUserAndThenProcess")
+    public void getUserAndThenProcess(@RequestBody Long[] ids) {
 
-        HashMap<Integer, Integer> map = new HashMap<>();
+        Supplier<List<Long>> supplyIds = () -> {
+            //sleep(500);
+            return Arrays.asList(ids);
+        };
 
-        for (int i = 1; i <= N; i++) {
-            map.put(i, 0);
-        }
 
-        for (int i = 0; i < trust.length; i++) {
-            map.put(i, map.get(i) + 1);
-        }
-        int[] ans = {-1};
-        map.forEach((k, v) -> {
-            if (v == 0) {
-                ans[0] =v;
-            }
+        Function<List<Long>, CompletableFuture<List<Optional<Customer>>>> fetchUsers = id -> {
+            //sleep(500);
+
+            Supplier<List<Optional<Customer>>> custSupplier =
+                    () -> {
+                        System.out.println("Running in Thread -> " + Thread.currentThread().getName());
+                        return id.stream()
+                                .map(i -> customerRepository.findById(i))
+                                .collect(Collectors.toList());
+                    };
+            return CompletableFuture.supplyAsync(custSupplier);
+        };
+
+        Consumer<List<Optional<Customer>>> displayCust = customers -> {
+            System.out.println("Running in Thread -> " + Thread.currentThread().getName());
+            customers.forEach(System.out::println);
+        };
+
+        Function<List<Long>, CompletableFuture<List<String>>> fetchMobileNumber = id -> {
+            sleep(350);
+            Supplier<List<String>> phoneNumberSupplier = () -> {
+                return id.stream().map(i -> customerService.getEmail(i)).collect(Collectors.toList());
+            };
+            return CompletableFuture.supplyAsync(phoneNumberSupplier);
+        };
+
+        CompletableFuture<List<Long>> completableFuture = CompletableFuture.supplyAsync(supplyIds);
+
+        CompletableFuture<List<Optional<Customer>>> userFuture = completableFuture.thenCompose(fetchUsers);
+        CompletableFuture<List<String>> mobileFuture = completableFuture.thenCompose(fetchMobileNumber);
+
+
+        // task after both of then gets executed
+        userFuture.thenAcceptBoth(mobileFuture, (cust, mob) -> {
+            System.out.println(cust.size() + " " + mob.size());
         });
-        return ans[0];
+
+        // one after the other
+        //.thenAcceptAsync(displayCust);
+
+        sleep(2000);
+    }
+
+    public void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
